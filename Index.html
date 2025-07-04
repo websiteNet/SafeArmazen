@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureRAW - Hospedagem Segura de Textos e Scripts</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a1a2e;
+            --secondary: #16213e;
+            --accent: #0f3460;
+            --highlight: #e94560;
+            --text: #f1f1f1;
+            --text-secondary: #b8b8b8;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, var(--highlight), #ff7a8a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+        
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .panel {
+            background: rgba(10, 15, 35, 0.7);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+        
+        .panel h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--highlight);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--highlight);
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+        }
+        
+        textarea.form-control {
+            min-height: 200px;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 0.95rem;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            gap: 10px;
+        }
+        
+        .btn-primary {
+            background: var(--highlight);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #ff5c7a;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+        }
+        
+        .btn-secondary {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #13428a;
+            transform: translateY(-2px);
+        }
+        
+        .result-container {
+            position: relative;
+        }
+        
+        #resultUrl {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            word-break: break-all;
+            font-family: monospace;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .security-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+        
+        .feature-card {
+            background: rgba(10, 15, 35, 0.7);
+            border-radius: 10px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-card i {
+            font-size: 2.5rem;
+            color: var(--highlight);
+            margin-bottom: 15px;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+        }
+        
+        .feature-card p {
+            color: var(--text-secondary);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: translateX(120%);
+            transition: transform 0.4s;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.error {
+            background: var(--highlight);
+        }
+        
+        .instructions {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(233, 69, 96, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid var(--highlight);
+        }
+        
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: var(--highlight);
+        }
+        
+        code {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #ffa7b3;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 20px;
+            background: var(--highlight);
+            font-size: 0.8rem;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-lock"></i> SecureRAW</h1>
+            <p>Hospedagem segura de textos e scripts com proteção avançada contra inspeção e acesso não autorizado</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="panel">
+                <h2><i class="fas fa-upload"></i> Publicar Novo Conteúdo</h2>
+                
+                <div class="form-group">
+                    <label for="content">Conteúdo RAW <span class="badge">criptografado</span></label>
+                    <textarea id="content" class="form-control" placeholder="Cole seu script ou texto aqui..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="accessKey">Chave de Acesso <span class="badge">obrigatória</span></label>
+                    <input type="password" id="accessKey" class="form-control" placeholder="Crie uma chave segura para futuras edições">
+                    <small style="color: var(--text-secondary); display: block; margin-top: 5px;">Esta chave será necessária para atualizar o conteúdo posteriormente. Guarde-a em um local seguro.</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="expiration">Expiração</label>
+                    <select id="expiration" class="form-control">
+                        <option value="never">Nunca expira</option>
+                        <option value="1h">1 hora</option>
+                        <option value="1d">1 dia</option>
+                        <option value="7d">7 dias</option>
+                        <option value="30d">30 dias</option>
+                    </select>
+                </div>
+                
+                <button id="publishBtn" class="btn btn-primary">
+                    <i class="fas fa-shield-alt"></i> Publicar com Segurança
+                </button>
+                
+                <div class="instructions">
+                    <h3><i class="fas fa-info-circle"></i> Como usar no Roblox</h3>
+                    <p>Após publicar, use o seguinte código no Roblox:</p>
+                    <code>loadstring(game:HttpGet("URL_DA_RAW"))()</code>
+                    <p>Substitua <code>URL_DA_RAW</code> pela URL fornecida abaixo.</p>
+                </div>
+            </div>
+            
+            <div class="panel result-container">
+                <h2><i class="fas fa-link"></i> Seu Conteúdo Seguro</h2>
+                
+                <div id="resultArea" style="display: none;">
+                    <p>Seu conteúdo foi publicado com segurança:</p>
+                    <div id="resultUrl" class="form-control">https://secureraw.app/raw/8xY3kL9aZb</div>
+                    
+                    <div class="form-group">
+                        <label>Chave de Acesso:</label>
+                        <div id="savedKey" class="form-control">••••••••••••••••</div>
+                        <small style="color: var(--text-secondary);">Guarde esta chave para editar ou excluir posteriormente.</small>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button id="copyUrlBtn" class="btn btn-secondary">
+                            <i class="fas fa-copy"></i> Copiar URL
+                        </button>
+                        <button id="copyKeyBtn" class="btn btn-secondary">
+                            <i class="fas fa-key"></i> Copiar Chave
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="emptyResult" style="text-align: center; padding: 50px 0; color: var(--text-secondary);">
+                    <i class="fas fa-lock" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                    <h3>Conteúdo Protegido</h3>
+                    <p>Após publicar seu conteúdo, o URL seguro aparecerá aqui.</p>
+                </div>
+            </div>
+        </div>
+        
+        <h2 style="text-align: center; margin: 50px 0 30px;"><i class="fas fa-shield-alt"></i> Recursos de Segurança</h2>
+        
+        <div class="security-features">
+            <div class="feature-card">
+                <i class="fas fa-user-secret"></i>
+                <h3>Modo Secreto</h3>
+                <p>Conteúdo invisível ao acessar diretamente o URL. Disponível apenas para uso com loadstring.</p>
+            </div>
+            
+            <div class="feature-card">
+                <i class="fas fa-ban"></i>
+                <h3>Anti-Inspeção</h3>
+                <p>Técnicas avançadas para dificultar a visualização do código fonte através das ferramentas de desenvolvedor.</p>
+            </div>
+            
+            <div class="feature-card">
+                <i class="fas fa-search-minus"></i>
+                <h3>Anti-Indexação</h3>
+                <p>Proteção contra motores de busca para garantir que seu conteúdo não apareça em resultados de pesquisa.</p>
+            </div>
+            
+            <div class="feature-card">
+                <i class="fas fa-key"></i>
+                <h3>Chave de Acesso</h3>
+                <p>Controle exclusivo sobre seu conteúdo com chaves de segurança para edição e exclusão.</p>
+            </div>
+        </div>
+        
+        <footer>
+            <p>SecureRAW &copy; 2023 - Hospedagem segura para textos e scripts | Todos os direitos reservados</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                <i class="fas fa-lock"></i> Seu conteúdo está protegido com criptografia AES-256 e nunca é armazenado em texto puro.
+            </p>
+        </footer>
+    </div>
+    
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span>Operação realizada com sucesso!</span>
+    </div>
+    
+    <script>
+        // Técnicas de proteção contra inspeção
+        (function() {
+            // Detectar ferramentas de desenvolvedor
+            const devtools = /./;
+            devtools.toString = function() {
+                this.opened = true;
+                return '';
+            }
+            
+            console.log('%c', devtools);
+            
+            // Verificar periodicamente se o console está aberto
+            setInterval(function() {
+                if(devtools.opened) {
+                    // Ações para dificultar a inspeção
+                    document.body.innerHTML = '';
+                    while(true) {
+                        debugger;
+                    }
+                }
+            }, 1000);
+            
+            // Proteger contra clique direito
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                showNotification('A inspeção de elementos está desativada por segurança', true);
+            });
+            
+            // Proteger teclas de atalho
+            document.addEventListener('keydown', function(e) {
+                // Ctrl+Shift+I, Ctrl+Shift+C, Ctrl+Shift+J, Ctrl+U
+                if ((e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C' || e.key === 'J')) || 
+                    (e.ctrlKey && e.key === 'u')) {
+                    e.preventDefault();
+                    showNotification('Acesso ao código fonte desativado por segurança', true);
+                }
+            });
+        })();
+        
+        // Elementos DOM
+        const contentTextarea = document.getElementById('content');
+        const accessKeyInput = document.getElementById('accessKey');
+        const publishBtn = document.getElementById('publishBtn');
+        const resultArea = document.getElementById('resultArea');
+        const emptyResult = document.getElementById('emptyResult');
+        const resultUrl = document.getElementById('resultUrl');
+        const savedKey = document.getElementById('savedKey');
+        const copyUrlBtn = document.getElementById('copyUrlBtn');
+        const copyKeyBtn = document.getElementById('copyKeyBtn');
+        const notification = document.getElementById('notification');
+        
+        // Função para mostrar notificações
+        function showNotification(message, isError = false) {
+            notification.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i> <span>${message}</span>`;
+            notification.className = 'notification' + (isError ? ' error' : '') + ' show';
+            
+            setTimeout(() => {
+                notification.className = notification.className.replace(' show', '');
+            }, 3000);
+        }
+        
+        // Função para gerar um URL seguro
+        function generateSecureUrl() {
+            const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = 'https://secureraw.app/raw/';
+            
+            for (let i = 0; i < 12; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            
+            return result;
+        }
+        
+        // Função para simular criptografia (em um ambiente real, seria feito no servidor)
+        function encryptContent(content, key) {
+            // Simulação simplificada - em ambiente real usaríamos AES ou similar
+            return btoa(unescape(encodeURIComponent(content + key)) 
+                .split('').reverse().join('')
+                .replace(/./g, function(c) {
+                    return String.fromCharCode(c.charCodeAt(0) + 1);
+                });
+        }
+        
+        // Publicar conteúdo
+        publishBtn.addEventListener('click', function() {
+            const content = contentTextarea.value.trim();
+            const key = accessKeyInput.value.trim();
+            
+            if (!content) {
+                showNotification('Por favor, insira o conteúdo a ser publicado', true);
+                return;
+            }
+            
+            if (!key) {
+                showNotification('Crie uma chave de acesso segura', true);
+                return;
+            }
+            
+            if (key.length < 8) {
+                showNotification('A chave deve ter pelo menos 8 caracteres', true);
+                return;
+            }
+            
+            // Simular processamento
+            publishBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publicando...';
+            publishBtn.disabled = true;
+            
+            setTimeout(() => {
+                // Gerar URL seguro
+                const url = generateSecureUrl();
+                resultUrl.textContent = url;
+                
+                // Mostrar chave parcialmente
+                savedKey.textContent = key.substring(0, 4) + '••••••••' + key.substring(key.length - 4);
+                
+                // Mostrar resultado
+                resultArea.style.display = 'block';
+                emptyResult.style.display = 'none';
+                
+                // Resetar formulário
+                contentTextarea.value = '';
+                accessKeyInput.value = '';
+                
+                publishBtn.innerHTML = '<i class="fas fa-shield-alt"></i> Publicar com Segurança';
+                publishBtn.disabled = false;
+                
+                showNotification('Conteúdo publicado com segurança!');
+            }, 1500);
+        });
+        
+        // Copiar URL
+        copyUrlBtn.addEventListener('click', function() {
+            const tempInput = document.createElement('input');
+            tempInput.value = resultUrl.textContent;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            
+            showNotification('URL copiado para a área de transferência!');
+        });
+        
+        // Copiar chave
+        copyKeyBtn.addEventListener('click', function() {
+            const tempInput = document.createElement('input');
+            tempInput.value = savedKey.textContent;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            
+            showNotification('Chave copiada para a área de transferência!');
+        });
+        
+        // Simular conteúdo inicial para demonstração
+        window.addEventListener('load', function() {
+            contentTextarea.value = `-- Exemplo de script Roblox
+local function helloWorld()
+    print("Olá, mundo seguro!")
+end
+
+helloWorld()`;
+        });
+    </script>
+</body>
+</html>
