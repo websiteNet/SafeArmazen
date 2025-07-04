@@ -274,56 +274,17 @@
             vertical-align: middle;
         }
         
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .modal-content {
-            background: var(--secondary);
-            border-radius: 10px;
-            padding: 30px;
-            width: 90%;
-            max-width: 800px;
-            max-height: 80vh;
-            overflow: auto;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .modal-body {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px;
-            border-radius: 5px;
-            font-family: monospace;
-            white-space: pre-wrap;
-            max-height: 50vh;
-            overflow: auto;
-        }
-        
-        .close-modal {
-            background: none;
-            border: none;
-            color: var(--text);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-        
         .hidden-content {
             display: none;
+        }
+        
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -453,19 +414,6 @@
     <!-- Conteúdo escondido para acessar via loadstring -->
     <div id="hiddenContent" class="hidden-content"></div>
     
-    <!-- Modal para visualização segura -->
-    <div class="modal" id="contentModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-lock"></i> Conteúdo Protegido</h2>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body" id="modalContent">
-                <!-- Conteúdo será inserido aqui via JavaScript -->
-            </div>
-        </div>
-    </div>
-    
     <script>
         // Elementos DOM
         const contentTextarea = document.getElementById('content');
@@ -479,9 +427,6 @@
         const copyUrlBtn = document.getElementById('copyUrlBtn');
         const copyKeyBtn = document.getElementById('copyKeyBtn');
         const notification = document.getElementById('notification');
-        const modal = document.getElementById('contentModal');
-        const modalContent = document.getElementById('modalContent');
-        const closeModal = document.querySelector('.close-modal');
         const hiddenContentDiv = document.getElementById('hiddenContent');
 
         // Função para mostrar notificações
@@ -499,30 +444,17 @@
             return 'raw_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
 
-        // Função para ofuscar conteúdo (simulação de criptografia)
+        // Função para ofuscar conteúdo
         function obfuscateContent(content) {
-            // Técnica de ofuscação simples para demonstração
+            // Técnica de ofuscação simples
             return btoa(unescape(encodeURIComponent(content)))
-                .split('').reverse().join('')
-                .replace(/[a-zA-Z]/g, function(c) {
-                    return String.fromCharCode(
-                        (c <= "Z" ? 90 : 122) >= (c = c.charCodeAt(0) + 13 
-                            ? c : c - 26
-                    );
-                });
+                .split('').reverse().join('');
         }
 
         // Função para desofuscar conteúdo
         function deobfuscateContent(obfuscated) {
             try {
-                let deobfuscated = obfuscated.replace(/[a-zA-Z]/g, function(c) {
-                    return String.fromCharCode(
-                        (c <= "Z" ? 90 : 122) >= (c = c.charCodeAt(0) - 13 
-                            ? c : c + 26
-                    );
-                });
-                
-                deobfuscated = deobfuscated.split('').reverse().join('');
+                let deobfuscated = obfuscated.split('').reverse().join('');
                 return decodeURIComponent(escape(atob(deobfuscated)));
             } catch (e) {
                 return "Erro ao decodificar conteúdo: " + e.message;
@@ -549,46 +481,53 @@
                 return;
             }
             
-            // Simular processamento
-            publishBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publicando...';
+            // Mostrar estado de carregamento
+            const originalBtnHTML = publishBtn.innerHTML;
+            publishBtn.innerHTML = '<i class="fas fa-spinner spinner"></i> Publicando...';
             publishBtn.disabled = true;
             
+            // Simular processamento
             setTimeout(() => {
-                // Gerar ID único
-                const contentId = generateUniqueId();
-                
-                // Ofuscar conteúdo
-                const obfuscatedContent = obfuscateContent(content);
-                
-                // Armazenar no localStorage
-                localStorage.setItem(contentId, JSON.stringify({
-                    content: obfuscatedContent,
-                    key: key
-                }));
-                
-                // Gerar URLs
-                const rawUrl = window.location.origin + window.location.pathname + '#' + contentId;
-                const updateUrlStr = window.location.origin + window.location.pathname + '?edit=' + contentId;
-                
-                // Atualizar UI
-                resultUrl.textContent = rawUrl;
-                updateUrl.textContent = updateUrlStr;
-                
-                // Mostrar chave parcialmente
-                savedKey.textContent = key.substring(0, 4) + '••••••••' + key.substring(key.length - 4);
-                
-                // Mostrar resultado
-                resultArea.style.display = 'block';
-                emptyResult.style.display = 'none';
-                
-                // Resetar formulário
-                contentTextarea.value = '';
-                accessKeyInput.value = '';
-                
-                publishBtn.innerHTML = '<i class="fas fa-shield-alt"></i> Publicar com Segurança';
-                publishBtn.disabled = false;
-                
-                showNotification('Conteúdo publicado com segurança!');
+                try {
+                    // Gerar ID único
+                    const contentId = generateUniqueId();
+                    
+                    // Ofuscar conteúdo
+                    const obfuscatedContent = obfuscateContent(content);
+                    
+                    // Armazenar no localStorage
+                    localStorage.setItem(contentId, JSON.stringify({
+                        content: obfuscatedContent,
+                        key: key
+                    }));
+                    
+                    // Gerar URLs
+                    const rawUrl = window.location.href.split('#')[0] + '#' + contentId;
+                    const updateUrlStr = window.location.href.split('?')[0] + '?edit=' + contentId;
+                    
+                    // Atualizar UI
+                    resultUrl.textContent = rawUrl;
+                    updateUrl.textContent = updateUrlStr;
+                    
+                    // Mostrar chave parcialmente
+                    savedKey.textContent = key.substring(0, 4) + '••••••••' + key.substring(key.length - 4);
+                    
+                    // Mostrar resultado
+                    resultArea.style.display = 'block';
+                    emptyResult.style.display = 'none';
+                    
+                    // Resetar formulário
+                    contentTextarea.value = '';
+                    accessKeyInput.value = '';
+                    
+                    showNotification('Conteúdo publicado com segurança!');
+                } catch (e) {
+                    showNotification('Erro ao publicar: ' + e.message, true);
+                } finally {
+                    // Restaurar botão
+                    publishBtn.innerHTML = originalBtnHTML;
+                    publishBtn.disabled = false;
+                }
             }, 1000);
         });
 
@@ -606,23 +545,11 @@
                 .catch(() => showNotification('Falha ao copiar chave', true));
         });
 
-        // Fechar modal
-        closeModal.addEventListener('click', function() {
-            modal.style.display = 'none';
-        });
-
-        // Técnica de proteção contra inspeção
-        window.addEventListener('devtoolschange', event => {
-            if (event.detail.isOpen) {
-                showNotification('Ferramentas de desenvolvedor detectadas!', true);
-            }
-        });
-
         // Verificar se há conteúdo para carregar via hash
         window.addEventListener('load', function() {
             const contentId = window.location.hash.substring(1);
             
-            if (contentId) {
+            if (contentId && contentId.startsWith('raw_')) {
                 // Recuperar conteúdo do localStorage
                 const savedData = localStorage.getItem(contentId);
                 
@@ -636,9 +563,11 @@
                         
                         // Não mostrar nada na página - modo secreto
                         document.body.innerHTML = '<div style="background: #1a1a2e; height: 100vh;"></div>';
+                        return;
                     } catch (e) {
                         // Se falhar, apenas mostra página vazia
                         document.body.innerHTML = '<div style="background: #1a1a2e; height: 100vh;"></div>';
+                        return;
                     }
                 }
             }
@@ -647,7 +576,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const editId = urlParams.get('edit');
             
-            if (editId) {
+            if (editId && editId.startsWith('raw_')) {
                 const savedData = localStorage.getItem(editId);
                 
                 if (savedData) {
@@ -660,13 +589,14 @@
                         accessKeyInput.value = key;
                         
                         // Simular que já foi publicado
-                        resultUrl.textContent = window.location.origin + window.location.pathname + '#' + editId;
+                        resultUrl.textContent = window.location.href.split('#')[0] + '#' + editId;
                         updateUrl.textContent = window.location.href;
                         savedKey.textContent = key.substring(0, 4) + '••••••••' + key.substring(key.length - 4);
                         resultArea.style.display = 'block';
                         emptyResult.style.display = 'none';
                         
                         showNotification('Conteúdo carregado para edição');
+                        return;
                     } catch (e) {
                         showNotification('Falha ao carregar conteúdo para edição', true);
                     }
@@ -684,55 +614,12 @@ helloWorld()`;
             }
         });
 
-        // Monitorar abertura de ferramentas de desenvolvedor
-        (function() {
-            const devtools = {
-                isOpen: false,
-                orientation: undefined
-            };
-            
-            const threshold = 160;
-            
-            const emitEvent = (isOpen, orientation) => {
-                window.dispatchEvent(new CustomEvent('devtoolschange', {
-                    detail: {
-                        isOpen,
-                        orientation
-                    }
-                }));
-            };
-            
-            setInterval(() => {
-                const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-                const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-                const orientation = widthThreshold ? 'vertical' : 'horizontal';
-                
-                if (!(heightThreshold && widthThreshold) &&
-                    (widthThreshold || heightThreshold)) {
-                    if (!devtools.isOpen || devtools.orientation !== orientation) {
-                        emitEvent(true, orientation);
-                    }
-                    
-                    devtools.isOpen = true;
-                    devtools.orientation = orientation;
-                } else {
-                    if (devtools.isOpen) {
-                        emitEvent(false, undefined);
-                    }
-                    
-                    devtools.isOpen = false;
-                    devtools.orientation = undefined;
-                }
-            }, 500);
-        })();
-
-        // Proteger contra clique direito
+        // Proteção simplificada contra inspeção
         document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
             showNotification('A inspeção de elementos está desativada por segurança', true);
         });
 
-        // Proteger teclas de atalho
         document.addEventListener('keydown', function(e) {
             // Ctrl+Shift+I, Ctrl+Shift+C, Ctrl+Shift+J, Ctrl+U
             if ((e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C' || e.key === 'J')) || 
