@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SecureRAW - Hospedagem Segura de Textos e Scripts</title>
+    <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -272,6 +273,58 @@
             margin-left: 10px;
             vertical-align: middle;
         }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: var(--secondary);
+            border-radius: 10px;
+            padding: 30px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-body {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 50vh;
+            overflow: auto;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .hidden-content {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -340,6 +393,12 @@
                             <i class="fas fa-key"></i> Copiar Chave
                         </button>
                     </div>
+                    
+                    <div class="instructions" style="margin-top: 20px;">
+                        <h3><i class="fas fa-edit"></i> Atualizar Conteúdo</h3>
+                        <p>Para atualizar este conteúdo posteriormente, acesse a URL abaixo e use sua chave:</p>
+                        <div id="updateUrl" class="form-control">https://secureraw.app/update/8xY3kL9aZb</div>
+                    </div>
                 </div>
                 
                 <div id="emptyResult" style="text-align: center; padding: 50px 0; color: var(--text-secondary);">
@@ -391,46 +450,23 @@
         <span>Operação realizada com sucesso!</span>
     </div>
     
+    <!-- Conteúdo escondido para acessar via loadstring -->
+    <div id="hiddenContent" class="hidden-content"></div>
+    
+    <!-- Modal para visualização segura -->
+    <div class="modal" id="contentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-lock"></i> Conteúdo Protegido</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body" id="modalContent">
+                <!-- Conteúdo será inserido aqui via JavaScript -->
+            </div>
+        </div>
+    </div>
+    
     <script>
-        // Técnicas de proteção contra inspeção
-        (function() {
-            // Detectar ferramentas de desenvolvedor
-            const devtools = /./;
-            devtools.toString = function() {
-                this.opened = true;
-                return '';
-            }
-            
-            console.log('%c', devtools);
-            
-            // Verificar periodicamente se o console está aberto
-            setInterval(function() {
-                if(devtools.opened) {
-                    // Ações para dificultar a inspeção
-                    document.body.innerHTML = '';
-                    while(true) {
-                        debugger;
-                    }
-                }
-            }, 1000);
-            
-            // Proteger contra clique direito
-            document.addEventListener('contextmenu', function(e) {
-                e.preventDefault();
-                showNotification('A inspeção de elementos está desativada por segurança', true);
-            });
-            
-            // Proteger teclas de atalho
-            document.addEventListener('keydown', function(e) {
-                // Ctrl+Shift+I, Ctrl+Shift+C, Ctrl+Shift+J, Ctrl+U
-                if ((e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C' || e.key === 'J')) || 
-                    (e.ctrlKey && e.key === 'u')) {
-                    e.preventDefault();
-                    showNotification('Acesso ao código fonte desativado por segurança', true);
-                }
-            });
-        })();
-        
         // Elementos DOM
         const contentTextarea = document.getElementById('content');
         const accessKeyInput = document.getElementById('accessKey');
@@ -438,11 +474,16 @@
         const resultArea = document.getElementById('resultArea');
         const emptyResult = document.getElementById('emptyResult');
         const resultUrl = document.getElementById('resultUrl');
+        const updateUrl = document.getElementById('updateUrl');
         const savedKey = document.getElementById('savedKey');
         const copyUrlBtn = document.getElementById('copyUrlBtn');
         const copyKeyBtn = document.getElementById('copyKeyBtn');
         const notification = document.getElementById('notification');
-        
+        const modal = document.getElementById('contentModal');
+        const modalContent = document.getElementById('modalContent');
+        const closeModal = document.querySelector('.close-modal');
+        const hiddenContentDiv = document.getElementById('hiddenContent');
+
         // Função para mostrar notificações
         function showNotification(message, isError = false) {
             notification.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i> <span>${message}</span>`;
@@ -452,29 +493,42 @@
                 notification.className = notification.className.replace(' show', '');
             }, 3000);
         }
-        
-        // Função para gerar um URL seguro
-        function generateSecureUrl() {
-            const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let result = 'https://secureraw.app/raw/';
-            
-            for (let i = 0; i < 12; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            
-            return result;
+
+        // Função para gerar um ID único
+        function generateUniqueId() {
+            return 'raw_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
-        
-        // Função para simular criptografia (em um ambiente real, seria feito no servidor)
-        function encryptContent(content, key) {
-            // Simulação simplificada - em ambiente real usaríamos AES ou similar
-            return btoa(unescape(encodeURIComponent(content + key)) 
+
+        // Função para ofuscar conteúdo (simulação de criptografia)
+        function obfuscateContent(content) {
+            // Técnica de ofuscação simples para demonstração
+            return btoa(unescape(encodeURIComponent(content)))
                 .split('').reverse().join('')
-                .replace(/./g, function(c) {
-                    return String.fromCharCode(c.charCodeAt(0) + 1);
+                .replace(/[a-zA-Z]/g, function(c) {
+                    return String.fromCharCode(
+                        (c <= "Z" ? 90 : 122) >= (c = c.charCodeAt(0) + 13 
+                            ? c : c - 26
+                    );
                 });
         }
-        
+
+        // Função para desofuscar conteúdo
+        function deobfuscateContent(obfuscated) {
+            try {
+                let deobfuscated = obfuscated.replace(/[a-zA-Z]/g, function(c) {
+                    return String.fromCharCode(
+                        (c <= "Z" ? 90 : 122) >= (c = c.charCodeAt(0) - 13 
+                            ? c : c + 26
+                    );
+                });
+                
+                deobfuscated = deobfuscated.split('').reverse().join('');
+                return decodeURIComponent(escape(atob(deobfuscated)));
+            } catch (e) {
+                return "Erro ao decodificar conteúdo: " + e.message;
+            }
+        }
+
         // Publicar conteúdo
         publishBtn.addEventListener('click', function() {
             const content = contentTextarea.value.trim();
@@ -500,9 +554,25 @@
             publishBtn.disabled = true;
             
             setTimeout(() => {
-                // Gerar URL seguro
-                const url = generateSecureUrl();
-                resultUrl.textContent = url;
+                // Gerar ID único
+                const contentId = generateUniqueId();
+                
+                // Ofuscar conteúdo
+                const obfuscatedContent = obfuscateContent(content);
+                
+                // Armazenar no localStorage
+                localStorage.setItem(contentId, JSON.stringify({
+                    content: obfuscatedContent,
+                    key: key
+                }));
+                
+                // Gerar URLs
+                const rawUrl = window.location.origin + window.location.pathname + '#' + contentId;
+                const updateUrlStr = window.location.origin + window.location.pathname + '?edit=' + contentId;
+                
+                // Atualizar UI
+                resultUrl.textContent = rawUrl;
+                updateUrl.textContent = updateUrlStr;
                 
                 // Mostrar chave parcialmente
                 savedKey.textContent = key.substring(0, 4) + '••••••••' + key.substring(key.length - 4);
@@ -519,41 +589,157 @@
                 publishBtn.disabled = false;
                 
                 showNotification('Conteúdo publicado com segurança!');
-            }, 1500);
+            }, 1000);
         });
-        
+
         // Copiar URL
         copyUrlBtn.addEventListener('click', function() {
-            const tempInput = document.createElement('input');
-            tempInput.value = resultUrl.textContent;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-            
-            showNotification('URL copiado para a área de transferência!');
+            navigator.clipboard.writeText(resultUrl.textContent)
+                .then(() => showNotification('URL copiado para a área de transferência!'))
+                .catch(() => showNotification('Falha ao copiar URL', true));
         });
-        
+
         // Copiar chave
         copyKeyBtn.addEventListener('click', function() {
-            const tempInput = document.createElement('input');
-            tempInput.value = savedKey.textContent;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-            
-            showNotification('Chave copiada para a área de transferência!');
+            navigator.clipboard.writeText(savedKey.textContent)
+                .then(() => showNotification('Chave copiada para a área de transferência!'))
+                .catch(() => showNotification('Falha ao copiar chave', true));
         });
-        
-        // Simular conteúdo inicial para demonstração
+
+        // Fechar modal
+        closeModal.addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+
+        // Técnica de proteção contra inspeção
+        window.addEventListener('devtoolschange', event => {
+            if (event.detail.isOpen) {
+                showNotification('Ferramentas de desenvolvedor detectadas!', true);
+            }
+        });
+
+        // Verificar se há conteúdo para carregar via hash
         window.addEventListener('load', function() {
-            contentTextarea.value = `-- Exemplo de script Roblox
+            const contentId = window.location.hash.substring(1);
+            
+            if (contentId) {
+                // Recuperar conteúdo do localStorage
+                const savedData = localStorage.getItem(contentId);
+                
+                if (savedData) {
+                    try {
+                        const { content } = JSON.parse(savedData);
+                        const decodedContent = deobfuscateContent(content);
+                        
+                        // Armazenar o conteúdo no elemento escondido
+                        hiddenContentDiv.textContent = decodedContent;
+                        
+                        // Não mostrar nada na página - modo secreto
+                        document.body.innerHTML = '<div style="background: #1a1a2e; height: 100vh;"></div>';
+                    } catch (e) {
+                        // Se falhar, apenas mostra página vazia
+                        document.body.innerHTML = '<div style="background: #1a1a2e; height: 100vh;"></div>';
+                    }
+                }
+            }
+            
+            // Verificar se é uma URL de edição
+            const urlParams = new URLSearchParams(window.location.search);
+            const editId = urlParams.get('edit');
+            
+            if (editId) {
+                const savedData = localStorage.getItem(editId);
+                
+                if (savedData) {
+                    try {
+                        const { content, key } = JSON.parse(savedData);
+                        const decodedContent = deobfuscateContent(content);
+                        
+                        // Preencher formulário de edição
+                        contentTextarea.value = decodedContent;
+                        accessKeyInput.value = key;
+                        
+                        // Simular que já foi publicado
+                        resultUrl.textContent = window.location.origin + window.location.pathname + '#' + editId;
+                        updateUrl.textContent = window.location.href;
+                        savedKey.textContent = key.substring(0, 4) + '••••••••' + key.substring(key.length - 4);
+                        resultArea.style.display = 'block';
+                        emptyResult.style.display = 'none';
+                        
+                        showNotification('Conteúdo carregado para edição');
+                    } catch (e) {
+                        showNotification('Falha ao carregar conteúdo para edição', true);
+                    }
+                }
+            }
+            
+            // Exemplo de conteúdo inicial para demonstração
+            if (!contentId && !editId) {
+                contentTextarea.value = `-- Exemplo de script Roblox
 local function helloWorld()
     print("Olá, mundo seguro!")
 end
 
 helloWorld()`;
+            }
+        });
+
+        // Monitorar abertura de ferramentas de desenvolvedor
+        (function() {
+            const devtools = {
+                isOpen: false,
+                orientation: undefined
+            };
+            
+            const threshold = 160;
+            
+            const emitEvent = (isOpen, orientation) => {
+                window.dispatchEvent(new CustomEvent('devtoolschange', {
+                    detail: {
+                        isOpen,
+                        orientation
+                    }
+                }));
+            };
+            
+            setInterval(() => {
+                const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+                const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+                const orientation = widthThreshold ? 'vertical' : 'horizontal';
+                
+                if (!(heightThreshold && widthThreshold) &&
+                    (widthThreshold || heightThreshold)) {
+                    if (!devtools.isOpen || devtools.orientation !== orientation) {
+                        emitEvent(true, orientation);
+                    }
+                    
+                    devtools.isOpen = true;
+                    devtools.orientation = orientation;
+                } else {
+                    if (devtools.isOpen) {
+                        emitEvent(false, undefined);
+                    }
+                    
+                    devtools.isOpen = false;
+                    devtools.orientation = undefined;
+                }
+            }, 500);
+        })();
+
+        // Proteger contra clique direito
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            showNotification('A inspeção de elementos está desativada por segurança', true);
+        });
+
+        // Proteger teclas de atalho
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+Shift+I, Ctrl+Shift+C, Ctrl+Shift+J, Ctrl+U
+            if ((e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C' || e.key === 'J')) || 
+                (e.ctrlKey && e.key === 'u')) {
+                e.preventDefault();
+                showNotification('Acesso ao código fonte desativado por segurança', true);
+            }
         });
     </script>
 </body>
